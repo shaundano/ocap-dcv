@@ -1,4 +1,5 @@
 import os
+import signal
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -312,39 +313,50 @@ def record(
     # Setup output files and recording context
     output_file = ensure_output_files_ready(file_location)
     context = RecordingContext(output_file)
-    additional_properties = parse_additional_properties(additional_args)
+    pid_file = Path.home() / ".ocap.pid"
+    try:
+        pid_file.write_text(str(os.getpid()))
+        additional_properties = parse_additional_properties(additional_args)
+        _display_warnings_and_instructions(window_name)
 
-    # Display warnings and instructions
-    _display_warnings_and_instructions(window_name)
+        # Handle delayed start if requested
+        if start_after:
+            countdown_delay(start_after)
 
-    # Handle delayed start if requested
-    if start_after:
-        countdown_delay(start_after)
+        # Start recording with all configured resources
+        with setup_resources(
+            context=context,
+            record_audio=record_audio,
+            record_video=record_video,
+            record_timestamp=record_timestamp,
+            show_cursor=show_cursor,
+            fps=fps,
+            window_name=window_name,
+            monitor_idx=monitor_idx,
+            width=width,
+            height=height,
+            additional_properties=additional_properties,
+        ) as resources:
+            with OWAMcapWriter(output_file) as writer:
+                # Record environment metadata
+                _record_environment_metadata(writer)
 
-    # Start recording with all configured resources
-    with setup_resources(
-        context=context,
-        record_audio=record_audio,
-        record_video=record_video,
-        record_timestamp=record_timestamp,
-        show_cursor=show_cursor,
-        fps=fps,
-        window_name=window_name,
-        monitor_idx=monitor_idx,
-        width=width,
-        height=height,
-        additional_properties=additional_properties,
-    ) as resources:
-        with OWAMcapWriter(output_file) as writer:
-            # Record environment metadata
-            _record_environment_metadata(writer)
+                # Run the main recording loop
+                _run_recording_loop(context, writer, resources, stop_after, health_check_interval)
 
-            # Run the main recording loop
-            _run_recording_loop(context, writer, resources, stop_after, health_check_interval)
+                # Resources are cleaned up by context managers
+                logger.info(f"Output file saved to {output_file}")
+    finally:
+        pid_file.unlink(missing_ok=True)
 
-            # Resources are cleaned up by context managers
-            logger.info(f"Output file saved to {output_file}")
 
+
+def stop(pid_file: Path = Path.home() / ".ocap.pid"):
+    if not pid_file.exists():
+        raise typer.Exit("No active recorder PID found.")
+    pid = int(pid_file.read_text())
+    os.kill(pid, signal.CTRL_C_EVENT)
+    pid_file.unlink(missing_ok=True)
 
 # ============================================================================
 # MAIN ENTRY POINT

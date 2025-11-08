@@ -34,6 +34,7 @@ packages = ["owa"]
 
 [project.scripts]
 ocap = "owa.ocap.recorder:main"
+ocap-stop = "owa.ocap.recorder:stop"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
