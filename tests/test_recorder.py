@@ -1,12 +1,15 @@
 from queue import Queue
 from unittest.mock import MagicMock, patch
 
+import signal
+
 import pytest
 
 from owa.ocap.recorder import (
     RecordingContext,
     check_resources_health,
     ensure_output_files_ready,
+    stop,
 )
 
 
@@ -93,3 +96,26 @@ class TestFileHandling:
         with patch("typer.confirm", return_value=False):
             with pytest.raises(typer.Abort):
                 ensure_output_files_ready(file_path)
+
+
+class TestStopCommand:
+    """Test the stop helper."""
+
+    @pytest.mark.skipif(not hasattr(signal, "CTRL_C_EVENT"), reason="Requires Windows CTRL_C_EVENT")
+    def test_stop_sends_ctrl_c_and_cleans_pid_file(self, tmp_path, monkeypatch):
+        pid_file = tmp_path / "test.pid"
+        pid_file.write_text("123")
+
+        captured = {}
+
+        def fake_kill(pid, sig):
+            captured["pid"] = pid
+            captured["sig"] = sig
+
+        monkeypatch.setattr("owa.ocap.recorder.os.kill", fake_kill)
+
+        stop(pid_file=pid_file)
+
+        assert captured["pid"] == 123
+        assert captured["sig"] == signal.CTRL_C_EVENT
+        assert not pid_file.exists()
