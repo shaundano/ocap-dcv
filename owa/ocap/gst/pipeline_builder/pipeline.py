@@ -33,7 +33,7 @@ def appsink_recorder_pipeline(
     width: Optional[int] = None,
     height: Optional[int] = None,
     additional_properties: Optional[dict] = None,
-    record_mic: bool = False,
+    record_mic: bool = True,
 ) -> str:
     """Construct a GStreamer pipeline for screen capturing.
     Args:
