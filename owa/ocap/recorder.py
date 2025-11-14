@@ -106,6 +106,7 @@ def setup_resources(
     width: Optional[int],
     height: Optional[int],
     additional_properties: dict,
+    record_mic: bool,
 ):
     """Set up and manage all recording resources (listeners, recorder, etc.)."""
     check_plugin()
@@ -154,6 +155,7 @@ def setup_resources(
         height=height,
         additional_properties=additional_properties,
         callback=screen_callback,
+        record_mic=record_mic,
     )
 
     resources = [
@@ -285,6 +287,7 @@ def record(
     record_timestamp: Annotated[bool, typer.Option(help="Whether to record timestamp")] = True,
     show_cursor: Annotated[bool, typer.Option(help="Whether to show the cursor in the capture")] = True,
     fps: Annotated[float, typer.Option(help="Video frame rate. Default is 60 fps.")] = 60.0,
+    record_mic: Annotated[bool, typer.Option(help="Whether to record microphone input as separate audio track")] = False,
     # Capture source options
     window_name: Annotated[
         Optional[str], typer.Option(help="Window name to capture. Supports substring matching.")
@@ -308,7 +311,12 @@ def record(
         float, typer.Option(help="Interval in seconds for checking resource health. Set to 0 to disable.")
     ] = 5.0,
 ):
-    """Record screen, keyboard, mouse, and window events to an `.mcap` and `.mkv` file."""
+    """Record screen, keyboard, mouse, and window events to an `.mcap` and `.mkv` file.
+    
+    Audio tracks in MKV:
+    - Track 0: Desktop/system audio (when record_audio=True)
+    - Track 1: Microphone input (when record_mic=True)
+    """
     output_file = ensure_output_files_ready(file_location)
     context = RecordingContext(output_file)
     pid_file = Path(r"C:\scripts\pid\ocap.pid")
@@ -338,6 +346,7 @@ def record(
             width=width,
             height=height,
             additional_properties=additional_properties,
+            record_mic=record_mic,
         ) as resources:
             with OWAMcapWriter(output_file) as writer:
                 # Record environment metadata

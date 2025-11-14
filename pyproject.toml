@@ -12,10 +12,11 @@ dependencies = [
     "owa-cli==0.6.2",  # not needed for ocap but for convenience on CLI. Installs two package additionally: owa-cli, plotext
     "owa-core==0.6.2",
     "owa-env-desktop==0.6.2",
-    "owa-env-gst==0.6.2",
     "owa-msgs==0.6.2",
     "tqdm",
     "typer>=0.20.0",
+    "numpy>=2.0",
+    "opencv-python",
 ]
 
 [dependency-groups]
@@ -34,6 +35,9 @@ packages = ["owa"]
 
 [project.scripts]
 ocap = "owa.ocap.recorder:main"
+
+[project.entry-points."owa.env.plugins"]
+gst = "owa.ocap.plugins.gst:plugin_spec"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
