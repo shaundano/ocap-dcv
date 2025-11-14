@@ -287,7 +287,7 @@ def record(
     record_timestamp: Annotated[bool, typer.Option(help="Whether to record timestamp")] = True,
     show_cursor: Annotated[bool, typer.Option(help="Whether to show the cursor in the capture")] = True,
     fps: Annotated[float, typer.Option(help="Video frame rate. Default is 60 fps.")] = 60.0,
-    record_mic: Annotated[bool, typer.Option(help="Whether to record microphone input as separate audio track")] = False,
+    record_mic: Annotated[bool, typer.Option(help="Whether to record microphone input as separate audio track")] = True,
     # Capture source options
     window_name: Annotated[
         Optional[str], typer.Option(help="Window name to capture. Supports substring matching.")
